@@ -526,6 +526,8 @@ static void setup_socket(u_long i)
 	DEBUG(1, "cs: setup_socket(%ld): applying power\n", i);
 	s->state |= SOCKET_PRESENT;
 	s->socket.flags = 0;
+	// MACOSXXX this is cool for now, we don't have chips that support 
+	// "X" or "Y" voltages, currently "Y" voltages are mapped to "X"
 	if (val & SS_3VCARD)
 	    s->socket.Vcc = s->socket.Vpp = 33;
 	else if (!(val & SS_XVCARD))
@@ -2113,10 +2115,15 @@ static int resume_card(client_handle_t handle, client_req_t *req)
     if (CHECK_HANDLE(handle))
 	return CS_BAD_HANDLE;
     i = handle->Socket; s = socket_table[i];
+#ifdef __MACOSX__
+    if ((s->state & SOCKET_PRESENT) && !(s->state & SOCKET_SUSPEND))
+	return CS_IN_USE;
+#else
     if (!(s->state & SOCKET_PRESENT))
 	return CS_NO_CARD;
     if (!(s->state & SOCKET_SUSPEND))
 	return CS_IN_USE;
+#endif
 
     DEBUG(1, "cs: waking up socket %d\n", i);
 #ifdef __MACOSX__
